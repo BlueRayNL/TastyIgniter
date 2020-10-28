@@ -1,6 +1,4 @@
-<?php
-
-namespace Admin\DashboardWidgets;
+<?php namespace Admin\DashboardWidgets;
 
 use Admin\Classes\BaseDashboardWidget;
 use Admin\Models\Customers_model;
@@ -43,9 +41,12 @@ class Statistics extends BaseDashboardWidget
                 'type' => 'select',
                 'options' => [
                     'day' => 'lang:admin::lang.dashboard.text_today',
+                    'yesterday' => 'lang:admin::lang.dashboard.text_yesterday',
+                    'daybeforeyesterday' => 'lang:admin::lang.dashboard.text_daybeforeyesterday',
                     'week' => 'lang:admin::lang.dashboard.text_week',
                     'month' => 'lang:admin::lang.dashboard.text_month',
                     'year' => 'lang:admin::lang.dashboard.text_year',
+                    //'custom' => 'lang:admin::lang.dashboard.text_custom_date',
                 ],
             ],
         ];
@@ -138,6 +139,7 @@ class Statistics extends BaseDashboardWidget
         $this->vars['statsLabel'] = $this->getContextLabel($context);
         $this->vars['statsIcon'] = $this->getContextIcon($context);
         $this->vars['statsCount'] = $this->callContextCountMethod($context);
+        $this->vars['statsRange'] = $this->getRange($this->property('range'));
     }
 
     protected function callContextCountMethod($context)
@@ -149,26 +151,99 @@ class Statistics extends BaseDashboardWidget
 
         return $count;
     }
+    protected function getRange($range)
+    {
+        if ($range === 'yesterday') {
+            $start = Carbon::now()->subDay();
+            $start = $start->setTime(00, 00);
+            $end = Carbon::now()->subDay();
+            $end = $end->setTime(23, 59, 59);
+            $date = 'Start Datum: '.$start.'</br> Eind Datum: '.$end; 
+            return($date);
+        }
+        else if ($range === 'daybeforeyesterday') {
+            $start = Carbon::now()->subDay(2);
+            $start = $start->setTime(00, 00);
+            $end = Carbon::now()->subDay(2);
+            $end = $end->setTime(23, 59, 59);
+            $date = 'Start Datum: '.$start.'</br> Eind Datum: '.$end; 
+            return($date);
+        }
+        else if ($range === 'day') {
+            $start = Carbon::now();
+            $start = $start->setTime(00, 00);
+            $date = 'Start Datum: '.$start.'</br> Eind Datum: '.Carbon::now();
+            return($date);
+        }
+        else if ($range === 'week') {
+            $start = Carbon::now()->subWeek();
+            $date = 'Start Datum: '.$start.'</br> Eind Datum: '.Carbon::now();
+            return($date);
+        }
+        else if ($range === 'month') {
+            $start = Carbon::now()->subMonth();
+            $date = 'Start Datum: '.$start.'</br> Eind Datum: '.Carbon::now();
+            return($date);
+        }
+        else if ($range === 'year') {
+            $start = Carbon::now()->startOfYear();
+            $date = 'Start Datum: '.$start.'</br> Eind Datum: '.Carbon::now();
+            return($date);
+        }
+    }
 
+    
     protected function applyRangeQuery($query, $range)
     {
-        if ($range === 'week') {
-            $start = Carbon::now()->subWeek();
-        }
-        elseif ($range === 'month') {
-            $start = Carbon::now()->subMonth();
-        }
-        elseif ($range === 'year') {
-            $start = Carbon::now()->startOfYear();
-        }
-        else {
+        if ($range === 'yesterday') {
             $start = Carbon::now()->subDay();
+            $start = $start->setTime(00, 00);
+            $end = Carbon::now()->subDay();
+            $end = $end->setTime(23, 59, 59);
+            $query->whereBetween('date_added', [
+                $start,
+                $end,
+            ]);
         }
-
-        $query->whereBetween('date_added', [
-            $start,
-            Carbon::now(),
-        ]);
+        else if ($range === 'daybeforeyesterday') {
+            $start = Carbon::now()->subDay(2);
+            $start = $start->setTime(00, 00);
+            $end = Carbon::now()->subDay(2);
+            $end = $end->setTime(23, 59, 59);
+            $query->whereBetween('date_added', [
+                $start,
+                $end,
+            ]);
+        }
+        else if ($range === 'day') {
+            $start = Carbon::now();
+            $start = $start->setTime(00, 00);
+            $query->whereBetween('date_added', [
+                $start,
+                Carbon::now(),
+            ]);
+        }
+        else if ($range === 'week') {
+            $start = Carbon::now()->subWeek();
+            $query->whereBetween('date_added', [
+                $start,
+                Carbon::now(),
+            ]);
+        }
+        else if ($range === 'month') {
+            $start = Carbon::now()->subMonth();
+            $query->whereBetween('date_added', [
+                $start,
+                Carbon::now(),
+            ]);
+        }
+        else if ($range === 'year') {
+            $start = Carbon::now()->startOfYear();
+            $query->whereBetween('date_added', [
+                $start,
+                Carbon::now(),
+            ]);
+        }
     }
 
     /**
